@@ -208,16 +208,8 @@ validate_credits(Context, ?HTTP_PUT) ->
     FuturAmount = Amount + wht_util:current_account_dollars(cb_context:account_id(Context)),
     case FuturAmount > MaxCredit of
         'true' ->
-            Message = <<"Available credit can not exceed $", (wh_util:to_binary(MaxCredit))/binary>>,
-            cb_context:add_validation_error(
-              <<"amount">>
-              ,<<"maximum">>
-              ,wh_json:from_list(
-                 [{<<"message">>, Message}
-                  ,{<<"cause">>, FuturAmount}
-                 ])
-              ,Context
-             );
+            Context1 = cb_context:store(Context, 'bt_order_id', wh_util:rand_hex_binary(16)),
+            maybe_charge_billing_id(Amount, Context1);
         'false' ->
             Context1 = cb_context:store(Context, 'bt_order_id', wh_util:rand_hex_binary(16)),
             maybe_charge_billing_id(Amount, Context1)
@@ -460,12 +452,12 @@ maybe_charge_billing_id(Amount, Context) ->
 
     case wh_services:find_reseller_id(cb_context:account_id(Context)) of
         MasterAccountId ->
-            lager:debug("invoking a bookkeeper to acquire requested credit"),
-            charge_billing_id(Amount, Context);
-        AuthAccountId when AuthAccountId =/= MasterAccountId ->
             lager:debug("allowing reseller to apply credit without invoking a bookkeeper"),
             Resp = wh_json:from_list([{<<"amount">>, Amount}]),
             crossbar_util:response(Resp, Context);
+        AuthAccountId when AuthAccountId =/= MasterAccountId ->
+            lager:debug("invoking a bookkeeper to acquire requested credit"),
+            charge_billing_id(Amount, Context);
         ResellerId ->
             lager:debug("sub-accounts of non-master resellers must contact the reseller to change their credit"),
             Resp = wh_json:from_list(

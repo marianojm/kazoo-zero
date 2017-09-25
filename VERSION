@@ -1,1 +1,6 @@
-v3.0
+Based on v3.22-acdc-updates (Voxter) + cf_branch_property.erl (SIPLABS) + agent priorities (Voxter)
+
+Based on v3.22-acdc-updates (Voxter) - last commit a515ce4f8400130c04efe774bff867609e42ec1d (20 AGO 2017)
+Patched by Mariano Martin for Zero (2016)
+Added cf_branch_property.erl by SIPLABS (2017)
+Patched with acdc agent priorities by Daniel Finke from Voxter (AGO 2017)
